@@ -16,4 +16,5 @@ public class Reservation {
     @Id
     private String id;
     private String name;
+    
 }
