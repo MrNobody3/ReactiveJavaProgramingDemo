@@ -22,6 +22,9 @@ import org.springframework.web.reactive.socket.server.support.WebSocketHandlerAd
 
 import home.demos.reactiveprogramingdemo.dao.ReservationRepos;
 import home.demos.reactiveprogramingdemo.entitymodel.Reservation;
+import home.demos.reactiveprogramingdemo.service.GreetingRequest;
+import home.demos.reactiveprogramingdemo.service.GreetingResponse;
+import home.demos.reactiveprogramingdemo.service.GreetingService;
 import io.r2dbc.spi.ConnectionFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -66,15 +69,18 @@ class GreetingWebSocketConfiguration{
 
 	//this function for busniss logic
 	@Bean
-	WebSocketHandler webSocketHandler(){
+	WebSocketHandler webSocketHandler(GreetingService gs){
 		return new WebSocketHandler(){
 			@Override
 			public Mono<Void> handle(WebSocketSession session) {
 				//ask for incomming data
 				Flux<WebSocketMessage> receive = session.receive();
 				Flux<String> names = receive.map(wsm -> wsm.getPayloadAsText());
-				names.map(name -> new GreetingR)
-				return null;
+				Flux<GreetingRequest> greetingRequestFlux = names.map(name -> new GreetingRequest(name));
+				Flux<GreetingResponse> greetingResponseFlux = greetingRequestFlux.flatMap(gr -> gs.greet(gr));
+				Flux<String> map = greetingResponseFlux.map(gr -> gr.getMessage());
+				Flux<WebSocketMessage> map1 = map.map(txt -> session.textMessage(txt));
+				return session.send(map1);
 			}
 		};
 	}
